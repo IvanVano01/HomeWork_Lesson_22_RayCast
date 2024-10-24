@@ -1,43 +1,24 @@
 using UnityEngine;
 
 public class Player : MonoBehaviour
-{
-    [Header("Links")]
-    [SerializeField] private ExplosionViewVfx _explosionViewVfx;
-    [SerializeField] private GameObject _viewPlaceMovingOnGroundPrefab;
-    [SerializeField] private InputHandler _inputHandler;
-    
-    [Header("Configs")]
-    [SerializeField] private LayerMask _itemlayerMask;
-    [SerializeField] private LayerMask _groundlayerMask;
-    [SerializeField] private float _radiusExplosionCast;
-
-    private DragAndDropItem _dragAndDropItem;
-    private ExplosionShooter _explosionShooter;
-
-    private Vector3 _drawZoneExplosion = Vector3.zero;
-
-    private void Awake()
-    {
-        _dragAndDropItem = new DragAndDropItem(_itemlayerMask, _groundlayerMask, _inputHandler, _viewPlaceMovingOnGroundPrefab);
-        _explosionShooter = new ExplosionShooter(_inputHandler, _groundlayerMask, _radiusExplosionCast, _explosionViewVfx);
-    }
+{ 
+    private IService _service;   
 
     private void Update()
-    {
-        _dragAndDropItem.Update();
-        _explosionShooter.Update();
-        _drawZoneExplosion = _explosionShooter.ExplosionPosition; 
+    {        
+        if (_service == null)
+            return;
+
+        _service.Update();
     }
 
     private void FixedUpdate()
-    {
-        _dragAndDropItem.FixUpdate();        
-    }
+    { 
+        if (_service == null)
+            return;
 
-    public void OnDrawGizmos()
-    {
-        Gizmos.color = Color.red;        
-        Gizmos.DrawWireSphere(_drawZoneExplosion, _radiusExplosionCast);
-    }
+        _service.FixUpdate();
+    }   
+
+    public void SetService(IService service) => _service = service;    
 }

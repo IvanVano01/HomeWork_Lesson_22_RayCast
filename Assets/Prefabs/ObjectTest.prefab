@@ -152,6 +152,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33f58eb8d28154a46a69177239f47c95, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _viewPlaceMovingOnGroundPrefab: {fileID: 7562423428883160347, guid: 87f31a1c155c2a449945c5bd79e60bb2,
+    type: 3}
+  _isDraggable: 1
 --- !u!54 &4306577225913001556
 Rigidbody:
   m_ObjectHideFlags: 0

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class ExplosionShooter
+public class ExplosionShooter : IService
 {
     private ExplosionViewVfx _explosionViewVfx;
     private InputHandler _inputHandler;
@@ -17,7 +17,7 @@ public class ExplosionShooter
     {
         _inputHandler = inputHandler;
         _groundlayerMask = groundlayerMask;
-        _radiusExplosionCast = radiusExplosionCast; 
+        _radiusExplosionCast = radiusExplosionCast;
         _explosionViewVfx = explosionViewVfx;
 
         _camera = Camera.main;
@@ -27,7 +27,7 @@ public class ExplosionShooter
     {
         if (_inputHandler.IsClickRightButtonMouse)
             CastExplosion();
-    }
+    }    
 
     public Vector3 ExplosionPosition => _explosionPosition;
 
@@ -43,16 +43,17 @@ public class ExplosionShooter
 
             foreach (Collider target in targets)
             {
-                if (target.GetComponentInParent<Item>() != null)
+                IDetonateble detonateble = target.GetComponentInParent<IDetonateble>();
+
+                if (detonateble != null)
                 {
-                    Item item = target.GetComponentInParent<Item>();
+                    Vector3 forceDirection = (detonateble.Transform.position - _explosionPosition) + Vector3.up;
 
-                    Vector3 forceDirection = (item.transform.position - _explosionPosition) + Vector3.up;
-
-                    item.GetComponent<Rigidbody>().AddForce(forceDirection * _strengthExplosion, ForceMode.Impulse);
+                    detonateble.OnDetonate(forceDirection, _strengthExplosion);
                     _explosionViewVfx.PlayVfx(_explosionPosition);
                 }
             }
         }
     }
+    
 }

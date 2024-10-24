@@ -1,11 +1,11 @@
 using UnityEngine;
 
-public class InputHandler : MonoBehaviour
+public class InputHandler 
 {
-    [field: SerializeField] public Vector3 MousePosition;    
+    public Vector3 MousePosition { get; private set; }
 
-    [field: SerializeField] public bool IsPressLeftButtonMouse { get; private set; }
-    [field: SerializeField] public bool IsClickRightButtonMouse { get; private set; }
+    public bool IsPressLeftButtonMouse { get; private set; }
+    public bool IsClickRightButtonMouse { get; private set; }
 
     public void Update()
     {
@@ -14,6 +14,4 @@ public class InputHandler : MonoBehaviour
 
         MousePosition = Input.mousePosition; 
     }
-
-
 }

@@ -1,51 +1,44 @@
 using UnityEngine;
 
-public class DragAndDropItem
-{  
+public class DragAndDropItem : IService
+{
     private InputHandler _inputHandler;
-    private LayerMask _itemlayerMask;
+    private LayerMask _grabbleLayerMask;
     private LayerMask _groundlayerMask;
 
     private float _rayDistance = 300f;
-    private float _limitAxisY = 0.0f;
+    private float _groundLevelAxisY = 0.0f;
     private Vector3 _offsetTakingItem;
-    private float _centerOfItemAxisY;
 
-    private GameObject _viewPlaceMovingOnGroundPrefab;
-    private GameObject _viewPlaceMovingOnGround;
-    private Item _item;
-    private Rigidbody _rigidbodyItem;
-    private Collider _collider;
+    private IGrabble _grabble;
+
     private Plane _dragPlane;
     private Camera _camera;
+    private GameObject _viewPlaceMovingOnGround;
 
-    public DragAndDropItem(LayerMask itemlayerMask, LayerMask groundlayerMask, InputHandler inputHandler, GameObject viewPlaceMovingOnGroundPrefab)
-    {        
-        _itemlayerMask = itemlayerMask;
+    public DragAndDropItem(LayerMask grabbleLayerMask, LayerMask groundlayerMask, InputHandler inputHandler, GameObject viewPlaceMovingOnGroundPrefab)
+    {
+        _grabbleLayerMask = grabbleLayerMask;
         _groundlayerMask = groundlayerMask;
         _inputHandler = inputHandler;
-        _viewPlaceMovingOnGroundPrefab = viewPlaceMovingOnGroundPrefab;
 
         _camera = Camera.main;
-        
-        _viewPlaceMovingOnGround = Object.Instantiate(_viewPlaceMovingOnGroundPrefab);
+
+        _viewPlaceMovingOnGround = viewPlaceMovingOnGroundPrefab;
+        _viewPlaceMovingOnGround = GameObject.Instantiate(_viewPlaceMovingOnGround);
         _viewPlaceMovingOnGround.SetActive(false);
-    } 
-    
+    }
+
     public void Update()
     {
         if (_inputHandler.IsPressLeftButtonMouse)
-        {
             SelectByRay();
-        }
     }
 
     public void FixUpdate()
     {
-        if (_inputHandler.IsPressLeftButtonMouse == false)
-        {
-            Drop();
-        }       
+        if (_inputHandler.IsPressLeftButtonMouse == false)        
+            Drop();        
     }
 
     private void SelectByRay()
@@ -55,25 +48,23 @@ public class DragAndDropItem
         _dragPlane.Raycast(cameraRay, out planeDist);
         Vector3 rayPointCollision = cameraRay.GetPoint(planeDist);
 
-        if (Physics.Raycast(cameraRay, out RaycastHit hitInfo, _rayDistance, _itemlayerMask))
+        if (Physics.Raycast(cameraRay, out RaycastHit hitInfo, _rayDistance, _grabbleLayerMask))
         {
-            Collider itemCollider = hitInfo.collider;
-            
-            _collider = itemCollider;
-            _centerOfItemAxisY = _collider.bounds.size.y / 2;
-            
-            if (_item == null)
+            IGrabble grabble = hitInfo.collider.GetComponentInParent<IGrabble>();
+
+            if (grabble != null && _grabble == null)
             {
-                if (itemCollider.GetComponentInParent<Item>())
-                    _item = itemCollider.GetComponentInParent<Item>();
-                _rigidbodyItem = _item.GetComponent<Rigidbody>();
+                _grabble = grabble;
             }
 
-            if (_item != null)
+            if (_grabble != null)
             {
-                _dragPlane = new Plane(_camera.transform.forward, _item.transform.position);
-                _offsetTakingItem = _item.transform.position - rayPointCollision;
-                _limitAxisY = GetGroundLevelAxisY(_item.transform.position, Vector3.down, _rayDistance, _groundlayerMask);
+                _dragPlane = new Plane(_camera.transform.forward, _grabble.Transform.position);
+                _offsetTakingItem = _grabble.Transform.position - rayPointCollision;
+
+                _groundLevelAxisY = GetGroundLevelAxisY(_grabble.Transform.position, Vector3.down, _rayDistance, _groundlayerMask);
+
+                _grabble.OnGrab();
             }
         }
 
@@ -82,34 +73,27 @@ public class DragAndDropItem
 
     private void Drag(Vector3 rayPointCollision)
     {
-        if (_item == null)
+        if (_grabble == null)
             return;
 
-        _rigidbodyItem.isKinematic = true;
-        _rigidbodyItem.Sleep();
-
-        _item.transform.position = (rayPointCollision + _offsetTakingItem); 
-        
-        if ((_item.transform.position.y - _centerOfItemAxisY) < _limitAxisY)
+        if (_grabble.IsDraggable)
         {
-            _item.transform.position = new Vector3(_item.transform.position.x, _limitAxisY + _centerOfItemAxisY,
-                _item.transform.position.z);
-        }
+            Vector3 forMovePosition = rayPointCollision + _offsetTakingItem;
+            _grabble.OnDrag(forMovePosition, _groundLevelAxisY);
 
-        _viewPlaceMovingOnGround.SetActive(true);
-        _viewPlaceMovingOnGround.transform.position = new Vector3(_item.transform.position.x, _limitAxisY + 0.01f, _item.transform.position.z);
+            _viewPlaceMovingOnGround.SetActive(true);
+            _viewPlaceMovingOnGround.transform.position = new Vector3(forMovePosition.x, _groundLevelAxisY + 0.01f, forMovePosition.z);
+        }
     }
 
     private void Drop()
     {
-        if (_item == null)
+        if (_grabble == null)
             return;
 
-        _rigidbodyItem.WakeUp();
-        _rigidbodyItem.isKinematic = false;
-
+        _grabble.OnRelease();
         _viewPlaceMovingOnGround.SetActive(false);
-        _item = null;
+        _grabble = null;
     }
 
     private float GetGroundLevelAxisY(Vector3 startPoinRay, Vector3 directRay, float distance, LayerMask layerMaskGround)
@@ -131,5 +115,5 @@ public class DragAndDropItem
 
         Debug.Log($" Внимание, уровень земли не определён, присвоено значение 0 ");
         return groundLevelAgxis;
-    }    
+    }
 }
